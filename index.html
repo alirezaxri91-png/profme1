@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>پروفمی - مهارت‌ها و مهارت پلاس</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Vazirmatn&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --muted:#a5b4c4;
+      --accent1:#ffd54a; --accent2:#60c47a; --accent3:#4da6ff; --glass: rgba(255,255,255,0.05);
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html,body{height:100%;font-family:'Vazirmatn','Bungee',cursive;direction:rtl; background:var(--bg); color:#e6eef8; padding:24px; transition: background 0.3s;}
+    .wrap{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:24px;}
+    header{display:flex;align-items:center;gap:16px;margin-bottom:12px;flex-wrap:wrap;position:relative;}
+    .avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--accent1),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:900;font-size:24px;color:#022;box-shadow:0 8px 24px rgba(0,0,0,0.6);overflow:hidden;}
+    h1{font-size:22px;margin-bottom:4px;}
+    p.lead{color:var(--muted);font-size:13px;}
+    .card{background:var(--glass);backdrop-filter:blur(12px);border-radius:14px;padding:16px;box-shadow:0 10px 30px rgba(2,6,23,0.7);border:1px solid rgba(255,255,255,0.06);}
+    .skills{position:relative;}
+    .skill-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;margin-top:12px;}
+    .skill-container{display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;padding:8px;}
+    .skill{position:relative;width:140px;height:140px;background:rgba(255,255,255,0.02);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:transform 0.18s;}
+    .skill.plus{border-radius:12px;}
+    .skill:hover{transform:scale(1.03);}
+    .progress{width:120px;height:120px;display:grid;place-items:center;position:relative;}
+    .progress svg{transform:rotate(-90deg);}
+    .label{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px;}
+    .pct{font-weight:800;font-size:16px;}
+    .skill-name{font-size:13px;color:var(--muted);margin-top:6px;text-align:center;word-break:break-word;}
+    .rating-text{font-size:12px;margin-top:4px;}
+    .btns{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;justify-content:center;}
+    .btns button{padding:6px 8px;border-radius:8px;border:none;font-size:13px;cursor:pointer;transition:all 0.15s;color:#fff;}
+    .delete-btn{background:#ff4d4d;}
+    .edit-btn{background:#4dc2ff;}
+    .note-btn{background:#ffb84d;}
+    .link-file{display:flex;gap:6px;margin-bottom:6px;justify-content:center;flex-wrap:wrap;}
+    .link-file a{font-size:13px;color:#fff;text-decoration:none;padding:4px 6px;border-radius:8px;background:rgba(255,255,255,0.03);}
+    input,button,select,textarea{padding:8px 10px;border-radius:10px;background:rgba(255,255,255,0.06);border:none;color:#fff;outline:none;font-family:'Vazirmatn','Bungee',cursive;}
+    textarea{min-height:160px;resize:vertical;}
+    button:hover{filter:brightness(1.05);}
+    #confettiCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999;}
+    .header-buttons{position:absolute;top:0;left:0;display:flex;gap:8px;flex-wrap:wrap;}
+    #timeDisplay{position:absolute;top:0;right:0;color:#ffd54a;font-size:13px;padding:6px;font-family:'Vazirmatn',sans-serif;}
+    /* edit modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:1200;}
+    .modal{background:var(--card);padding:16px;border-radius:12px;max-width:420px;width:94%;}
+    .row{display:flex;gap:8px;align-items:center;}
+    .row > *{flex:1;}
+    /* note side panel */
+    .note-panel{position:fixed;right:-420px;top:0;width:380px;height:100%;background:var(--card);box-shadow:-10px 0 30px rgba(0,0,0,0.6);transition:right .28s;z-index:1300;padding:16px;display:flex;flex-direction:column;gap:10px;}
+    .note-panel.open{right:0;}
+    .small{font-size:12px;color:var(--muted);}
+    .bg-controls{display:flex;gap:8px;align-items:center;}
+    .remove-bg{background:#ff6b6b;padding:8px;border-radius:8px;color:#022;border:none;cursor:pointer;}
+    @media(max-width:700px){ .skill{width:120px;height:120px} .progress{width:100px;height:100px} }
+  </style>
+</head>
+<body>
+  <canvas id="confettiCanvas"></canvas>
+  <div id="timeDisplay"></div>
+
+  <!-- welcome / profile modal -->
+  <div id="welcomeModal" class="modal-backdrop">
+    <div class="modal">
+      <h3>🎉 خوش اومدی به پروفمی!</h3>
+      <p class="small">مشخصات پروفایلت رو وارد کن و عکس/پس‌زمینه آپلود کن.</p>
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
+        <input id="nameInput" placeholder="نام پروفایل" />
+        <input id="descInput" placeholder="توضیحات کوتاه" />
+        <input id="imgUploadInput" type="file" accept="image/*" />
+        <input id="bgUploadInput" type="file" accept="image/*" />
+        <div style="display:flex;gap:8px;">
+          <button id="saveProfileBtn">ذخیره و ورود</button>
+          <button id="cancelProfileBtn" style="background:#555">انصراف</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- edit skill modal -->
+  <div id="editModal" class="modal-backdrop">
+    <div class="modal">
+      <h4>ویرایش مهارت</h4>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+        <input id="editName" placeholder="نام مهارت" />
+        <input id="editPct" placeholder="درصد" />
+        <input id="editSite" placeholder="لینک سایت (اختیاری)" />
+        <input id="editFile" placeholder="لینک فایل (اختیاری)" />
+        <input id="editImgUpload" type="file" accept="image/*" />
+        <div style="display:flex;gap:8px;">
+          <button id="saveEditBtn">ذخیره</button>
+          <button id="cancelEditBtn" style="background:#555">بستن</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- note panel -->
+  <div id="notePanel" class="note-panel" aria-hidden="true">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <strong>یادداشت مهارت</strong>
+      <div style="display:flex;gap:8px;">
+        <button id="closeNote" style="background:#777;padding:6px;border-radius:8px;">بستن</button>
+      </div>
+    </div>
+    <div id="noteMeta" class="small"></div>
+    <textarea id="noteText" placeholder="اینجا بنویس و ذخیره کن..."></textarea>
+    <div style="display:flex;gap:8px;">
+      <button id="saveNoteBtn">ذخیره یادداشت</button>
+      <button id="clearNoteBtn" style="background:#ff6b6b">حذف یادداشت</button>
+    </div>
+  </div>
+
+  <div class="wrap" id="mainContent" style="display:none;">
+    <header class="card" style="align-items:center;">
+      <div class="avatar" id="profileAvatar"><img id="profileAvatarImg" src="https://source.unsplash.com/80x80/?portrait,face,avatar" alt="پروفایل" style="width:100%;height:100%;object-fit:cover;"></div>
+      <div style="flex:1;">
+        <h1 id="profileName">نام خودت</h1>
+        <p class="lead" id="profileDesc">© تمام حقوق محفوظ است</p>
+      </div>
+      <div class="header-buttons">
+        <button id="confettiBtn">🎉</button>
+        <button id="excelBtn">📊 اکسل</button>
+        <button id="openProfileEditor">🖊️ پروفایل</button>
+        <button id="clearSkillsBtn">🗑️ حذف همه</button>
+        <div class="bg-controls" style="margin-right:6px;">
+          <input id="bgUploadInline" type="file" accept="image/*" title="آپلود پس‌زمینه">
+          <button id="removeBgBtn" class="remove-bg" title="حذف پس‌زمینه">حذف پس‌زمینه</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="card skills">
+      <h3>مهارت‌ها</h3>
+      <div class="skill-grid" id="skills"></div>
+
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <input id="skillFileInput" type="file" accept="image/*" title="عکس مهارت">
+        <input id="skillName" placeholder="نام مهارت" />
+        <input id="skillPct" placeholder="درصد" style="width:90px" />
+        <button id="addSkill">افزودن</button>
+      </div>
+    </div>
+
+    <div class="card skills">
+      <h3 style="color:var(--accent3)">مهارت پلاس</h3>
+      <div class="skill-grid" id="skillsPlus"></div>
+
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <input id="skillFilePlusInput" type="file" accept="image/*" />
+        <input id="skillNamePlus" placeholder="نام مهارت" />
+        <input id="skillPctPlus" placeholder="درصد" style="width:90px" />
+        <input id="skillFilePlus" placeholder="لینک فایل (اختیاری)" />
+        <input id="skillSitePlus" placeholder="آدرس سایت (اختیاری)" />
+        <button id="addSkillPlus">افزودن پلاس</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script>
+    // زمان
+    function updateTime(){
+      const now=new Date();
+      const utc=now.getTime() + (now.getTimezoneOffset()*60000);
+      const tehran=new Date(utc + 3.5*60*60000);
+      const hh=String(tehran.getHours()).padStart(2,'0'), mm=String(tehran.getMinutes()).padStart(2,'0'), ss=String(tehran.getSeconds()).padStart(2,'0');
+      document.getElementById('timeDisplay').textContent = `🕒 تهران: ${hh}:${mm}:${ss}`;
+    }
+    setInterval(updateTime,1000);
+    updateTime();
+
+    // داده‌ها (ساختاری)
+    let skills = []; // array of objects {id, name, pct, img, site, file, note, isPlus}
+    const skillsKey = 'pf_skills_v2';
+    const profileKey = 'pf_profile_v2';
+    const bgKey = 'pf_bg_v2';
+
+    // helper
+    const $ = sel => document.querySelector(sel);
+    const uid = () => 's_'+Math.random().toString(36).slice(2,9);
+
+    // ذخیره و بارگذاری
+    function saveAll(){
+      localStorage.setItem(skillsKey, JSON.stringify(skills));
+    }
+    function loadAll(){
+      const data = localStorage.getItem(skillsKey);
+      skills = data ? JSON.parse(data) : [];
+      renderAll();
+    }
+
+    // profile save/load
+    function saveProfileFromModal(profileObj){
+      localStorage.setItem(profileKey, JSON.stringify(profileObj));
+    }
+    function loadProfile(){
+      const p = JSON.parse(localStorage.getItem(profileKey) || '{}');
+      if(p.name) $('#profileName').textContent = p.name;
+      if(p.desc) $('#profileDesc').textContent = p.desc;
+      if(p.img) { $('#profileAvatarImg').src = p.img; }
+    }
+
+    // render one skill
+    function renderSkill(item){
+      const parent = item.isPlus ? $('#skillsPlus') : $('#skills');
+      const container = document.createElement('div');
+      container.className = 'skill-container';
+      container.dataset.id = item.id;
+
+      // link/file display (above)
+      let linkHtml = '';
+      if(item.site) linkHtml += `<a class="site-link" href="${item.site}" target="_blank">🌐 سایت</a>`;
+      if(item.file) linkHtml += `<a class="file-link" href="${item.file}" download>📎 فایل</a>`;
+
+      const imgTag = item.img ? `<img src="${item.img}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;margin-bottom:6px;">` : '';
+
+      let [color,rateText] = getColorAndText(parseInt(item.pct||0));
+
+      container.innerHTML = `
+        <div class="${item.isPlus ? 'skill plus' : 'skill'}">
+          <div class="progress" data-percentage="${item.pct||0}">
+            <svg width="110" height="110">
+              <circle cx="55" cy="55" r="48" stroke="rgba(255,255,255,0.06)" stroke-width="12" fill="none"></circle>
+              <circle class="bar" cx="55" cy="55" r="48" stroke-linecap="round" stroke-width="12" stroke="${color}" stroke-dasharray="0 1000" fill="none"></circle>
+            </svg>
+            <div class="label">
+              ${imgTag}
+              <div class="pct">0%</div>
+              <div class="skill-name">${escapeHtml(item.name)}</div>
+              <div class="rating-text">${rateText}</div>
+            </div>
+          </div>
+        </div>
+        <div class="link-file">${linkHtml}</div>
+        <div class="btns">
+          <button class="note-btn">📝</button>
+          <button class="edit-btn">🖊️</button>
+          <button class="delete-btn">🗑️</button>
+        </div>
+      `;
+      parent.appendChild(container);
+
+      // bind events
+      const del = container.querySelector('.delete-btn');
+      del.addEventListener('click', ()=> { if(confirm('این مهارت حذف شود؟')){ skills = skills.filter(s=>s.id !== item.id); saveAll(); renderAll(); } });
+
+      const edt = container.querySelector('.edit-btn');
+      edt.addEventListener('click', ()=> openEditModal(item.id) );
+
+      const note = container.querySelector('.note-btn');
+      note.addEventListener('click', ()=> openNotePanel(item.id) );
+
+      // animate progress
+      animateProgress(container.querySelector('.progress'));
+    }
+
+    function renderAll(){
+      $('#skills').innerHTML=''; $('#skillsPlus').innerHTML='';
+      // sort maybe? keep order
+      skills.forEach(s => renderSkill(s));
+      saveAll();
+    }
+
+    // safe html escape for names
+    function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
+
+    // animate progress
+    function animateProgress(el){
+      const pct = parseInt(el.getAttribute('data-percentage')||0);
+      const svgBar = el.querySelector('.bar');
+      const label = el.querySelector('.pct');
+      const r = 48, c = Math.PI*(r*2);
+      let start=null;
+      function step(ts){
+        if(!start) start=ts;
+        const t = Math.min(1,(ts-start)/800);
+        const current = Math.round(t*pct);
+        const currentDash = (current/100)*c;
+        svgBar.style.strokeDasharray = currentDash + ' ' + c;
+        label.textContent = current + '%';
+        if(t<1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+
+    function getColorAndText(pct){
+      if(pct<40) return ['#ff4d4d','ضعیف'];
+      if(pct<70) return ['#ffb84d','متوسط'];
+      return ['#60c47a','عالی'];
+    }
+
+    // add skill via inputs (normal)
+    $('#addSkill').addEventListener('click', ()=>{
+      const fileInput = $('#skillFileInput');
+      const name = $('#skillName').value.trim() || 'مهارت جدید';
+      const pct = parseInt($('#skillPct').value) || 0;
+      if(fileInput.files[0]){
+        const reader = new FileReader();
+        reader.onload = e => {
+          const item = { id: uid(), name, pct, img: e.target.result, site:'', file:'', note:'', isPlus:false };
+          skills.push(item); saveAll(); renderAll();
+          $('#skillName').value=''; $('#skillPct').value=''; fileInput.value='';
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+      } else {
+        const item = { id: uid(), name, pct, img:'', site:'', file:'', note:'', isPlus:false };
+        skills.push(item); saveAll(); renderAll();
+        $('#skillName').value=''; $('#skillPct').value='';
+      }
+    });
+
+    // add skill plus
+    $('#addSkillPlus').addEventListener('click', ()=>{
+      const fileInput = $('#skillFilePlusInput');
+      const name = $('#skillNamePlus').value.trim() || 'مهارت پلاس جدید';
+      const pct = parseInt($('#skillPctPlus').value) || 0;
+      const site = $('#skillSitePlus').value.trim() || '';
+      const file = $('#skillFilePlus').value.trim() || '';
+      if(fileInput.files[0]){
+        const reader = new FileReader();
+        reader.onload = e => {
+          const item = { id: uid(), name, pct, img: e.target.result, site, file, note:'', isPlus:true };
+          skills.push(item); saveAll(); renderAll();
+          $('#skillNamePlus').value=''; $('#skillPctPlus').value=''; $('#skillFilePlus').value=''; $('#skillSitePlus').value=''; fileInput.value='';
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+      } else {
+        const item = { id: uid(), name, pct, img:'', site, file, note:'', isPlus:true };
+        skills.push(item); saveAll(); renderAll();
+        $('#skillNamePlus').value=''; $('#skillPctPlus').value=''; $('#skillFilePlus').value=''; $('#skillSitePlus').value='';
+      }
+    });
+
+    // edit modal logic
+    let currentEditId = null;
+    function openEditModal(id){
+      currentEditId = id;
+      const item = skills.find(s=>s.id===id);
+      if(!item) return;
+      $('#editName').value = item.name;
+      $('#editPct').value = item.pct||0;
+      $('#editSite').value = item.site||'';
+      $('#editFile').value = item.file||'';
+      $('#editImgUpload').value = '';
+      $('#editModal').style.display = 'flex';
+    }
+    $('#cancelEditBtn').addEventListener('click', ()=> $('#editModal').style.display='none');
+    $('#saveEditBtn').addEventListener('click', ()=>{
+      if(!currentEditId) return;
+      const item = skills.find(s=>s.id===currentEditId);
+      if(!item) return;
+      item.name = $('#editName').value.trim() || item.name;
+      item.pct = parseInt($('#editPct').value) || 0;
+      item.site = $('#editSite').value.trim() || '';
+      item.file = $('#editFile').value.trim() || '';
+      const f = $('#editImgUpload').files[0];
+      if(f){
+        const reader = new FileReader();
+        reader.onload = e => {
+          item.img = e.target.result;
+          finalizeEdit(item);
+        };
+        reader.readAsDataURL(f);
+      } else {
+        finalizeEdit(item);
+      }
+    });
+    function finalizeEdit(item){
+      saveAll(); renderAll();
+      $('#editModal').style.display='none';
+      currentEditId = null;
+    }
+
+    // note panel logic
+    let currentNoteId = null;
+    function openNotePanel(id){
+      currentNoteId = id;
+      const item = skills.find(s=>s.id===id);
+      if(!item) return;
+      $('#noteMeta').textContent = item.name || 'بدون نام';
+      $('#noteText').value = item.note || '';
+      $('#notePanel').classList.add('open');
+      $('#notePanel').setAttribute('aria-hidden','false');
+    }
+    $('#closeNote').addEventListener('click', ()=> {
+      $('#notePanel').classList.remove('open');
+      $('#notePanel').setAttribute('aria-hidden','true');
+      currentNoteId = null;
+    });
+    $('#saveNoteBtn').addEventListener('click', ()=>{
+      if(!currentNoteId) return;
+      const item = skills.find(s=>s.id===currentNoteId);
+      if(!item) return;
+      item.note = $('#noteText').value;
+      saveAll();
+      // close panel or keep open
+      // $('#notePanel').classList.remove('open');
+    });
+    $('#clearNoteBtn').addEventListener('click', ()=>{
+      if(!currentNoteId) return;
+      const item = skills.find(s=>s.id===currentNoteId);
+      if(!item) return;
+      if(confirm('حذف یادداشت؟')){ item.note=''; $('#noteText').value=''; saveAll(); }
+    });
+
+    // confetti
+    function runConfetti(){
+      const canvas = document.getElementById('confettiCanvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+      const pieces = [];
+      for(let i=0;i<150;i++){
+        pieces.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*6+4,d:Math.random()*10+10,color:`hsl(${Math.random()*360},100%,50%)`});
+      }
+      let start=null, angle=0;
+      function anim(t){
+        if(!start) start=t;
+        const elapsed = t-start;
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        angle+=0.01;
+        pieces.forEach(p=>{
+          p.y += Math.cos(angle + p.d) + 1 + p.r/2;
+          p.x += Math.sin(angle) * 2;
+          if(p.y>canvas.height){ p.y=0; p.x=Math.random()*canvas.width; }
+          ctx.fillStyle = p.color;
+          ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,2*Math.PI); ctx.fill();
+        });
+        if(elapsed < 2000) requestAnimationFrame(anim);
+        else ctx.clearRect(0,0,canvas.width,canvas.height);
+      }
+      requestAnimationFrame(anim);
+    }
+    $('#confettiBtn').addEventListener('click', runConfetti);
+
+    // clear all
+    $('#clearSkillsBtn').addEventListener('click', ()=>{
+      if(confirm('همه مهارت‌ها حذف شوند؟')){ skills=[]; saveAll(); renderAll(); }
+    });
+
+    // excel
+    $('#excelBtn').addEventListener('click', ()=>{
+      const wb = XLSX.utils.book_new();
+      const wsData = [["نام","درصد","نوع","سایت","فایل","یادداشت"]];
+      skills.forEach(s=>{
+        wsData.push([s.name, (s.pct||0)+'%', s.isPlus ? 'پلاس':'عادی', s.site||'', s.file||'', s.note||'']);
+      });
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      XLSX.utils.book_append_sheet(wb, ws, 'Skills');
+      XLSX.writeFile(wb, 'profile_skills.xlsx');
+    });
+
+    // profile editor open
+    $('#openProfileEditor').addEventListener('click', ()=> {
+      // populate modal from saved profile
+      const p = JSON.parse(localStorage.getItem(profileKey) || '{}');
+      $('#nameInput').value = p.name || '';
+      $('#descInput').value = p.desc || '';
+      $('#imgUploadInput').value = ''; // resetting file input
+      $('#bgUploadInput').value = '';
+      $('#welcomeModal').style.display = 'flex';
+    });
+    // cancel profile
+    $('#cancelProfileBtn').addEventListener('click', ()=> { $('#welcomeModal').style.display='none'; });
+
+    // save profile
+    $('#saveProfileBtn').addEventListener('click', ()=>{
+      const name = $('#nameInput').value.trim() || 'کاربر';
+      const desc = $('#descInput').value.trim() || '';
+      const file = $('#imgUploadInput').files[0];
+      const bgFile = $('#bgUploadInput').files[0];
+      const profileObj = { name, desc, img: '' };
+
+      function finalizeProfile(){
+        saveProfileFromModal(profileObj);
+        localStorage.setItem('profileCreated','1');
+        loadProfile();
+        $('#welcomeModal').style.display = 'none';
+        $('#mainContent').style.display = 'block';
+      }
+
+      if(file){
+        const r = new FileReader();
+        r.onload = e => {
+          profileObj.img = e.target.result;
+          // set avatar immediately
+          $('#profileAvatarImg').src = profileObj.img;
+          if(bgFile){
+            const rb = new FileReader();
+            rb.onload = ev => {
+              document.body.style.background = `url('${ev.target.result}') center/cover no-repeat`;
+              localStorage.setItem(bgKey, ev.target.result);
+              finalizeProfile();
+            };
+            rb.readAsDataURL(bgFile);
+          } else {
+            finalizeProfile();
+          }
+        };
+        r.readAsDataURL(file);
+      } else {
+        // no avatar file
+        if(bgFile){
+          const rb = new FileReader();
+          rb.onload = ev => {
+            document.body.style.background = `url('${ev.target.result}') center/cover no-repeat`;
+            localStorage.setItem(bgKey, ev.target.result);
+            finalizeProfile();
+          };
+          rb.readAsDataURL(bgFile);
+        } else {
+          finalizeProfile();
+        }
+      }
+    });
+
+    // inline background upload (header)
+    $('#bgUploadInline').addEventListener('change', (ev)=>{
+      const f = ev.target.files[0];
+      if(!f) return;
+      const r = new FileReader();
+      r.onload = e => {
+        document.body.style.background = `url('${e.target.result}') center/cover no-repeat`;
+        localStorage.setItem(bgKey, e.target.result);
+      };
+      r.readAsDataURL(f);
+    });
+    $('#removeBgBtn').addEventListener('click', ()=>{
+      if(confirm('آیا پس‌زمینه حذف شود؟')){ localStorage.removeItem(bgKey); document.body.style.background = ''; $('#bgUploadInline').value=''; }
+    });
+
+    // on load: read saved profile and skills
+    (function init(){
+      const prof = JSON.parse(localStorage.getItem(profileKey) || '{}');
+      if(!localStorage.getItem('profileCreated')){
+        $('#welcomeModal').style.display = 'flex';
+      } else {
+        $('#mainContent').style.display = 'block';
+      }
+      if(prof.name) $('#profileName').textContent = prof.name;
+      if(prof.desc) $('#profileDesc').textContent = prof.desc;
+      if(prof.img) $('#profileAvatarImg').src = prof.img;
+      const bg = localStorage.getItem(bgKey);
+      if(bg) document.body.style.background = `url('${bg}') center/cover no-repeat`;
+      // load skills JSON
+      loadAll();
+    })();
+
+    // utility: rebind re-render after DOM changes (already used those handlers)
+    // done
+
+  </script>
+</body>
+</html>
